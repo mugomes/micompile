@@ -1,0 +1,180 @@
+#!/bin/bash
+
+# Copyright (C) 2025 Murilo Gomes Julio
+# SPDX-License-Identifier: GPL-2.0-only
+
+# Mestre da Info
+# Site: https://www.mestredainfo.com.br
+
+# Apoie o Projeto
+# Apoia.se: https://apoia.se/mestredainfo
+
+micompile_path=$(pwd)
+
+while true; do
+	echo "Script desenvolvido pelo Mestre da Info"
+	echo "Site: https://www.mestredainfo.com.br"
+	echo ""
+	echo "Apoie o Projeto"
+	echo "Apoia.se: https://apoia.se/mestredainfo"
+	echo ""
+	echo "-------------------------------- MICompile --------------------------------"
+    echo "Selecione uma opção:"
+    echo "1. Baixar o PHP"
+    echo "2. Compilar o PHP"
+	echo ""
+    echo "3. Criar arquivo AppRun, .desktop e ícone"
+    echo "4. Executar linuxdeploy"
+    echo "5. Executar appimagetool"
+	echo ""
+    echo "6. Instalar linuxdeploy e appimagetool"
+    echo "7. Instalar dependencias do PHP"
+	echo ""
+    echo "8. Sair"
+    echo "-------------------------------- /MICompile --------------------------------"
+	echo ""
+	
+    read -p "Opção: " option
+
+    case $option in
+    	1)			
+    		read -p "Digite a versão do PHP: " versaodophp
+    		read -p "Digite o hash do PHP: " hashdophp
+    		
+    		mkdir -p out
+    		rm -f out/php-$versaodophp.tar.gz
+    		wget -O out/php-$versaodophp.tar.gz https://www.php.net/distributions/php-$versaodophp.tar.gz
+    		
+    		if [ "$(cat out/php-$versaodophp.tar.gz | sha256sum | head -c 64)" = "$hashdophp" ]; then
+    			echo 'Hash correto!'
+    		else
+    			echo 'Hash incorreto!'
+    		fi
+    		;;
+    	2)
+			read -p "Digite a versão do PHP: " versaodophp
+			
+    		rm -rf out/build/
+    		mkdir -p out/build/
+			tar -xzf out/php-$versaodophp.tar.gz -C out/build/
+
+			cd out/build/php*/
+			
+			./configure \
+			--enable-soap --with-libxml \
+			--enable-bcmath \
+			--enable-calendar \
+			--enable-opcache \
+			--enable-mbstring \
+			--enable-intl \
+			--enable-mysqlnd \
+			--enable-gd \
+			--enable-exif \
+			--with-zlib \
+			--with-readline \
+			--with-curl \
+			--with-openssl \
+			--with-password-argon2 \
+			--with-sodium \
+			--with-pear \
+			--with-gmp \
+			--with-mysqli=mysqlnd \
+			--with-pdo-mysql=mysqlnd \
+			--with-zip \
+			--with-xsl \
+			--with-jpeg \
+			--with-webp \
+			--with-avif
+
+			alterandounamenophpconfig=$(uname -a)
+			sed -i "s|${alterandounamenophpconfig}|Linux|g" main/php_config.h
+
+			make -j $(nproc)
+			
+			cd $micompile_path
+			;;			 		
+        3)
+        	read -p "Nome do seu AppImage: " nomeappimage
+        	
+			rm -rf out/AppDir/
+			mkdir -p out/AppDir/
+
+            # Criar arquivo AppRun
+            cat <<EOF > "out/AppDir/AppRun"
+#!/bin/sh
+
+exec "\$(dirname "\$0")"/${nomeappimage} "\$@"
+EOF
+
+			# Gera o appimage
+			cat <<EOF > "out/AppDir/${nomeappimage}"
+#!/bin/bash
+
+export LD_LIBRARY_PATH="\${APPIMAGE_LIBRARY_PATH}:\${APPDIR}/usr/lib:\${LD_LIBRARY_PATH}"
+\${APPDIR}/usr/bin/php \$@
+EOF
+
+            # Copia o PHP para a pasta AppDir e cria o arquivo ShellScript
+			mkdir -p out/AppDir/usr/share/php/
+            cp -f out/build/php*/sapi/cli/php out/AppDir/
+			cp -f out/build/php*/LICENSE out/AppDir/usr/share/php/
+
+			chmod +x "out/AppDir/${nomeappimage}"
+
+            # Criar arquivo .desktop
+            cat <<EOF > "out/AppDir/${nomeappimage}.desktop"
+[Desktop Entry]
+Name=${nomeappimage}
+Exec=${nomeappimage} %U
+Icon=${nomeappimage}
+Type=Application
+Terminal=true
+Categories=Development
+EOF
+
+            # Criar imagem azul
+            convert -size 32x32 xc:"#0074a3" "out/AppDir/${nomeappimage}.png"
+            echo "Arquivos criados com sucesso!"
+            ;;
+        4)
+        	read -p "Nome do seu AppImage: " nomeappimage
+        	
+			chmod +x "out/AppDir/php"
+            linuxdeploy/linuxdeploy --appdir out/AppDir --executable "out/AppDir/php" --desktop-file "out/AppDir/${nomeappimage}.desktop" --icon-file "out/AppDir/${nomeappimage}.png"
+            ;;
+        5)
+        	read -p "Nome do seu AppImage: " nomeappimage
+            ARCH=x86_64 appimagetool/appimagetool out/AppDir out/${nomeappimage}
+        	;;   
+        6)
+        	echo "Removendo versões anteriores..."
+        	rm -rf linuxdeploy
+        	rm -rf appimagetool
+        	
+        	echo "Criando pasta tmp..."
+            mkdir -p linuxdeploy
+            mkdir -p appimagetool
+                        
+            echo "Baixando e instalando o linuxdeploy..."
+            wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage -O linuxdeploy/linuxdeploy-x86_64.AppImage
+            mv linuxdeploy/linuxdeploy-x86_64.AppImage linuxdeploy/linuxdeploy
+			chmod +x linuxdeploy/linuxdeploy
+			
+			echo "Baixando e instalando o appimagetool..." 
+			wget "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" -O appimagetool/appimagetool-x86_64.AppImage
+			mv appimagetool/appimagetool-x86_64.AppImage appimagetool/appimagetool
+			chmod +x appimagetool/appimagetool
+            ;;
+        7)
+        	echo "Instalando as dependencias do PHP para compilação..."
+			sudo apt install build-essential autoconf libtool bison re2c pkg-config build-essential pkg-config autoconf libtool bison re2c libxml2-dev libonig-dev libssl-dev libargon2-0-dev libsodium-dev libcurl4-openssl-dev libreadline-dev libyaml-dev libgmp-dev libzip-dev libpng-dev libjpeg-dev libwebp-dev libxpm-dev libicu-dev libfreetype6-dev libxslt-dev libldb-dev libtidy-dev libvips-dev libsqlite3-dev libcurl4-openssl-dev libzip-dev libpng-dev libjpeg-dev libwebp-dev libavif-dev libonig-dev libxml2-dev libzip-dev appstream -y
+        	;;
+        8)
+            echo "Saindo..."
+            exit 0
+            ;;
+        *)
+            echo "Opção inválida. Por favor, escolha uma opção válida."
+            ;;
+    esac
+done
