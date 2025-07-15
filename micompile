@@ -3,22 +3,17 @@
 # Copyright (C) 2025 Murilo Gomes Julio
 # SPDX-License-Identifier: GPL-2.0-only
 
-# Mestre da Info
-# Site: https://www.mestredainfo.com.br
-
-# Apoie o Projeto
-# Apoia.se: https://apoia.se/mestredainfo
+# Site: https://www.mugomes.com.br
 
 micompile_path=$(pwd)
 
 while true; do
-	echo "Script desenvolvido pelo Mestre da Info"
-	echo "Site: https://www.mestredainfo.com.br"
+	echo "Script desenvolvido por Murilo Gomes"
+	echo "Site: https://www.mugomes.com.br"
 	echo ""
-	echo "Apoie o Projeto"
-	echo "Apoia.se: https://apoia.se/mestredainfo"
+	echo "Assinantes: https://www.mugomes.com.br/p/assinantes.html"
 	echo ""
-	echo "-------------------------------- MICompile --------------------------------"
+	echo "-------------------------------- MiCompile --------------------------------"
     echo "Selecione uma opção:"
     echo "1. Baixar o PHP"
     echo "2. Compilar o PHP"
@@ -31,7 +26,7 @@ while true; do
     echo "7. Instalar dependencias do PHP"
 	echo ""
     echo "8. Sair"
-    echo "-------------------------------- /MICompile --------------------------------"
+    echo "-------------------------------- /MiCompile --------------------------------"
 	echo ""
 	
     read -p "Opção: " option
